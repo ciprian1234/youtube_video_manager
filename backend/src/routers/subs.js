@@ -3,7 +3,9 @@ const axios = require("axios");
 const { authenticateUser } = require("../auth/auth");
 const { updateProviderTokens } = require("../auth/google/utils");
 
-router.get("/subs", authenticateUser, updateProviderTokens, async function (req, res) {
+router.use(authenticateUser, updateProviderTokens);
+
+router.get("/subs", async function (req, res) {
   try {
     // make the request
     const response = await axios({
