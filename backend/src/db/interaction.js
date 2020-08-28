@@ -3,6 +3,8 @@ const { randomBytes } = require("crypto");
 
 module.exports = {
   getUser,
+  getUsers,
+  updateUserByEmail,
   createOrUpdateUser,
   updateUserRefreshTokenVersion,
 };
@@ -24,9 +26,18 @@ async function createOrUpdateUser(profile) {
   return getUser(newProfile.email);
 }
 
+async function updateUserByEmail(newData, email) {
+  await User.update(newData, { where: { email } });
+}
+
 // get user by email from database
 async function getUser(email) {
   return await User.findOne({ where: { email } });
+}
+
+// get all users
+async function getUsers(where = { where: {} }) {
+  return await User.findAll(where);
 }
 
 // update user tokenVersion from database
@@ -38,14 +49,8 @@ async function updateUserRefreshTokenVersion(email) {
 // user adapter from Provider to User model from database
 function createUserProfileAdapter(profile) {
   return {
-    providerID: profile.sub,
-    providerAccessToken: profile.accessToken,
-    providerRefreshToken: profile.refreshToken,
+    ...profile, // spread: email, givenName, familyName, tokens...
     refreshTokenVersion: randomBytes(32).toString("base64"),
     // role: has already a default value of 'user'
-    email: profile.email,
-    givenName: profile.given_name,
-    familyName: profile.family_name,
-    picture: profile.picture,
   };
 }

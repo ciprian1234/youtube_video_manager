@@ -9,8 +9,10 @@ const sequelize = new Sequelize({
 const User = sequelize.define(
   "User",
   {
-    // Model attributes are defined here
-    providerID: {
+    provider: {
+      type: DataTypes.STRING,
+    },
+    providerId: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -19,6 +21,10 @@ const User = sequelize.define(
       allowNull: false,
     },
     providerRefreshToken: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    providerIdToken: {
       type: DataTypes.STRING,
       allowNull: false,
     },

@@ -15,6 +15,7 @@
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "googleapis": "^59.0.0",
     "jsonwebtoken": "^8.5.1",
     "sequelize": "^6.3.4",
     "sqlite3": "^5.0.0"

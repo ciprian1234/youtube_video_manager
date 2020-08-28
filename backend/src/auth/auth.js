@@ -1,8 +1,34 @@
 const jwt = require("jsonwebtoken");
 const CONFIG = require("../config");
-const { getUser } = require("../db/interaction.js");
+const { createOrUpdateUser, getUser } = require("../db/interaction.js");
 
-async function isAuthorized(req, res, next) {
+module.exports = { loginMiddleware, authenticateUser, isAuthorized, verifyToken };
+
+async function loginMiddleware(req, res) {
+  if (!req.user) res.status(401).json({ error: "AuthError: Failed to login with OAuth2.0" });
+
+  // check if user is already stored in DB
+  const db_user = await createOrUpdateUser(req.user);
+  const { id, email, refreshTokenVersion } = db_user;
+
+  // create accessToken
+  const accessToken = jwt.sign({ id, email }, CONFIG.ACCESS_TOKEN_SECRET, {
+    expiresIn: parseInt(CONFIG.ACCESS_TOKEN_EXPIRATION / 1000),
+  });
+
+  // create refreshToken
+  const refreshToken = jwt.sign({ id, email, refreshTokenVersion }, CONFIG.REFRESH_TOKEN_SECRET, {
+    expiresIn: parseInt(CONFIG.REFRESH_TOKEN_EXPIRATION / 1000),
+  });
+
+  // save refreshToken in user browser as cookie
+  res.cookie("refreshToken", refreshToken, { httpOnly: true, maxAge: parseInt(CONFIG.REFRESH_TOKEN_EXPIRATION) });
+
+  // send userProfile along with accessToken to user
+  res.json({ user: db_user, accessToken });
+}
+
+async function authenticateUser(req, res, next) {
   try {
     // extract jwt refreshToken from user cookie
     if (!req.cookies.refreshToken) throw new Error("Missing refreshToken cookie");
@@ -34,6 +60,17 @@ async function isAuthorized(req, res, next) {
   }
 }
 
+function isAuthorized(role) {
+  // TODO check if user has specific authorization
+  // return midleware with specific authorization
+  return function (req, res, next) {
+    if (req.user.role != role) {
+      res.status(401).json({ error: `AuthError: User not authorized!` });
+    }
+    next();
+  };
+}
+
 function verifyToken(token, secret, errMsg) {
   try {
     return jwt.verify(token, secret);
@@ -41,5 +78,3 @@ function verifyToken(token, secret, errMsg) {
     throw new Error(`Invalid ${errMsg} (${err.message})`);
   }
 }
-
-module.exports = { isAuthorized };
